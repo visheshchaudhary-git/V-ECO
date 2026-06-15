@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veco — Student Feedback Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d14;
+    --paper: #f5f0e8;
+    --cream: #faf7f2;
+    --teal: #00b4a0;
+    --teal-dark: #008577;
+    --amber: #f59e0b;
+    --rose: #f43f5e;
+    --violet: #7c3aed;
+    --pos: #10b981;
+    --neg: #f43f5e;
+    --neu: #6366f1;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13,13,20,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; color: var(--teal); letter-spacing: -0.5px; flex-shrink: 0; }
+  .logo span { color: var(--paper); }
+
+  nav ul { display: flex; gap: 0.25rem; list-style: none; }
+  nav ul li a {
+    padding: 0.4rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 500;
+    color: rgba(245,240,232,0.7); text-decoration: none; transition: all 0.2s; cursor: pointer; white-space: nowrap;
+  }
+  nav ul li a:hover, nav ul li a.active { background: rgba(0,180,160,0.12); color: var(--teal); }
+
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); z-index: 110; }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--paper); border-radius: 2px; transition: all 0.3s; }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .mobile-menu { display: none; position: fixed; top: 60px; left: 0; right: 0; background: rgba(13,13,20,0.98); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 1rem; z-index: 99; flex-direction: column; gap: 0.35rem; }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a { display: block; padding: 0.85rem 1rem; border-radius: 10px; font-size: 0.95rem; font-weight: 500; color: rgba(245,240,232,0.8); text-decoration: none; cursor: pointer; transition: all 0.2s; }
+  .mobile-menu a:hover, .mobile-menu a.active { background: rgba(0,180,160,0.12); color: var(--teal); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .hero { min-height: calc(100vh - 64px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0,180,160,0.12) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 80%, rgba(124,58,237,0.08) 0%, transparent 60%); }
+
+  .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 1rem; background: rgba(0,180,160,0.1); border: 1px solid rgba(0,180,160,0.3); border-radius: 999px; font-size: 0.8rem; font-weight: 500; color: var(--teal); margin-bottom: 2rem; animation: fadeUp 0.6s ease both; }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 7vw, 6rem); font-weight: 900; line-height: 1.05; margin-bottom: 1.5rem; animation: fadeUp 0.6s 0.1s ease both; }
+  .hero h1 em { font-style: italic; color: var(--teal); }
+  .hero p { font-size: 1.2rem; color: rgba(245,240,232,0.6); max-width: 560px; line-height: 1.7; margin-bottom: 2.5rem; animation: fadeUp 0.6s 0.2s ease both; }
+  .hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; animation: fadeUp 0.6s 0.3s ease both; }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.75rem; border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+  .btn-primary { background: var(--teal); color: var(--ink); }
+  .btn-primary:hover { background: var(--teal-dark); transform: translateY(-1px); }
+  .btn-ghost { background: rgba(245,240,232,0.07); color: var(--paper); border: 1px solid rgba(245,240,232,0.15); }
+  .btn-ghost:hover { background: rgba(245,240,232,0.12); }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 700px; margin: 4rem auto 0; animation: fadeUp 0.6s 0.4s ease both; }
+  .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.5rem; text-align: center; }
+  .stat-card .num { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 700; color: var(--teal); }
+  .stat-card .label { font-size: 0.8rem; color: rgba(245,240,232,0.5); margin-top: 0.25rem; }
+
+  .section { max-width: 1100px; margin: 0 auto; padding: 5rem 2rem; }
+  .section-header { margin-bottom: 3rem; }
+  .section-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.75rem; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.2; }
+
+  .demo-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 2.5rem; }
+  .demo-label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 1rem; }
+
+  .demo-textarea { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; color: var(--paper); font-family: 'DM Sans', sans-serif; font-size: 1rem; line-height: 1.6; resize: vertical; min-height: 120px; transition: border-color 0.2s; }
+  .demo-textarea:focus { outline: none; border-color: var(--teal); }
+  .demo-textarea::placeholder { color: rgba(245,240,232,0.3); }
+
+  .sentiment-bars { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+  .sentiment-row { display: flex; align-items: center; gap: 1rem; }
+  .sentiment-row .s-label { width: 80px; font-size: 0.85rem; font-weight: 600; flex-shrink: 0; }
+  .s-label.pos { color: var(--pos); }
+  .s-label.neg { color: var(--neg); }
+  .s-label.neu { color: var(--neu); }
+
+  .bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+  .bar-fill.pos { background: linear-gradient(90deg, var(--pos), #34d399); }
+  .bar-fill.neg { background: linear-gradient(90deg, var(--neg), #fb7185); }
+  .bar-fill.neu { background: linear-gradient(90deg, var(--neu), #818cf8); }
+
+  .s-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; width: 42px; text-align: right; }
+
+  .keyword-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .keyword-tag { padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .keyword-tag.pos { background: rgba(16,185,129,0.15); color: var(--pos); border: 1px solid rgba(16,185,129,0.3); }
+  .keyword-tag.neg { background: rgba(244,63,94,0.15); color: var(--neg); border: 1px solid rgba(244,63,94,0.3); }
+  .keyword-tag.neu { background: rgba(99,102,241,0.15); color: var(--neu); border: 1px solid rgba(99,102,241,0.3); }
+
+  .sentiment-verdict { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+  .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+
+  .d-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 1.75rem; }
+  .d-card-title { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 1.5rem; }
+
+  .chart-svg { width: 100%; height: 200px; }
+  .trend-area { position: relative; height: 180px; margin-top: 1rem; }
+  .chart-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: rgba(245,240,232,0.3); font-family: 'JetBrains Mono', monospace; margin-top: 0.5rem; }
+
+  .feedback-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .fb-item { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 1rem; border-left: 3px solid transparent; font-size: 0.875rem; line-height: 1.5; color: rgba(245,240,232,0.8); }
+  .fb-item.pos { border-left-color: var(--pos); }
+  .fb-item.neg { border-left-color: var(--neg); }
+  .fb-item.neu { border-left-color: var(--neu); }
+
+  .fb-item.new-entry { animation: slideInFeedback 0.6s cubic-bezier(0.4,0,0.2,1) both; }
+  @keyframes slideInFeedback {
+    from { opacity: 0; transform: translateX(24px); background: rgba(0,180,160,0.12); border-left-color: var(--teal); }
+    80% { background: rgba(0,180,160,0.06); }
+    to { opacity: 1; transform: translateX(0); background: rgba(0,0,0,0.2); }
+  }
+
+  .fb-meta { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: rgba(245,240,232,0.3); }
+
+  .mini-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .mini-pos { background: rgba(16,185,129,0.15); color: var(--pos); }
+  .mini-neg { background: rgba(244,63,94,0.15); color: var(--neg); }
+  .mini-neu { background: rgba(99,102,241,0.15); color: var(--neu); }
+
+  .live-dot { display: inline-block; width: 8px; height: 8px; background: var(--pos); border-radius: 50%; animation: pulseDot 1.5s ease-in-out infinite; margin-right: 4px; vertical-align: middle; }
+  @keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.65); } }
+
+  @keyframes flashUpdate { 0% { color: var(--teal); transform: scale(1.08); } 100% { transform: scale(1); } }
+  .flash-update { animation: flashUpdate 0.6s ease both; }
+
+  .nlp-preview { display: none; margin-top: 0.75rem; background: rgba(0,0,0,0.25); border: 1px solid rgba(0,180,160,0.18); border-radius: 12px; padding: 1rem 1.25rem; animation: fadeUp 0.3s ease both; }
+  .nlp-preview.show { display: block; }
+  .nlp-preview-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.65rem; }
+  .nlp-mini-bars { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.65rem; }
+  .nlp-mini-row { display: flex; align-items: center; gap: 0.65rem; }
+  .nlp-mini-label { width: 62px; font-size: 0.72rem; font-weight: 600; flex-shrink: 0; }
+  .nlp-mini-track { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+  .nlp-mini-fill { height: 100%; border-radius: 999px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+  .nlp-mini-pct { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; width: 32px; text-align: right; }
+
+  .student-profile { background: linear-gradient(135deg, rgba(0,180,160,0.1), rgba(124,58,237,0.08)); border: 1px solid rgba(0,180,160,0.2); border-radius: 24px; padding: 2rem; display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--violet)); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+  .profile-info h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+  .profile-info p { font-size: 0.875rem; color: rgba(245,240,232,0.5); margin-top: 0.25rem; }
+  .xp-bar-wrap { flex: 1; min-width: 200px; }
+  .xp-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.5rem; color: rgba(245,240,232,0.6); }
+  .xp-track { height: 10px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+  .xp-fill { height: 100%; width: 68%; background: linear-gradient(90deg, var(--teal), #34d399); border-radius: 999px; transition: width 1.5s cubic-bezier(0.4,0,0.2,1); }
+  .points-chip { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 0.75rem 1.25rem; text-align: center; }
+  .points-chip .pts { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 600; color: var(--amber); transition: color 0.5s; }
+  .points-chip .pts-label { font-size: 0.75rem; color: rgba(245,240,232,0.4); }
+
+  .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .badge-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.25rem; text-align: center; transition: all 0.2s; }
+  .badge-card:hover { border-color: rgba(255,255,255,0.16); transform: translateY(-2px); }
+  .badge-card.locked { opacity: 0.4; }
+  .badge-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .badge-name { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .badge-desc { font-size: 0.7rem; color: rgba(245,240,232,0.4); }
+
+  .leaderboard { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; }
+  .lb-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(245,240,232,0.4); display: grid; grid-template-columns: 48px 1fr 80px 80px; gap: 1rem; }
+  .lb-row { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); display: grid; grid-template-columns: 48px 1fr 80px 80px; gap: 1rem; align-items: center; transition: background 0.2s; }
+  .lb-row:hover { background: rgba(255,255,255,0.02); }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 1rem; text-align: center; }
+  .lb-rank.gold { color: #fbbf24; }
+  .lb-rank.silver { color: #94a3b8; }
+  .lb-rank.bronze { color: #cd7c2f; }
+  .lb-course { font-weight: 500; font-size: 0.9rem; }
+  .lb-prof { font-size: 0.75rem; color: rgba(245,240,232,0.4); margin-top: 0.15rem; }
+  .lb-responses { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; color: var(--teal); text-align: right; transition: color 0.4s; }
+  .lb-rate { text-align: right; }
+  .rate-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .rate-high { background: rgba(16,185,129,0.15); color: var(--pos); }
+  .rate-mid { background: rgba(99,102,241,0.15); color: var(--neu); }
+  .rate-low { background: rgba(244,63,94,0.15); color: var(--neg); }
+
+  .feedback-form-wrap { max-width: 700px; margin: 0 auto; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: rgba(245,240,232,0.7); margin-bottom: 0.5rem; }
+  .form-select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.85rem 1rem; color: var(--paper); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; appearance: none; transition: border-color 0.2s; }
+  .form-select:focus { outline: none; border-color: var(--teal); }
+  .rating-group { display: flex; gap: 0.5rem; }
+  .rating-btn { flex: 1; padding: 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--paper); font-size: 1.2rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .rating-btn:hover, .rating-btn.active { background: rgba(0,180,160,0.15); border-color: var(--teal); }
+
+  /* Identity toggle */
+  .identity-toggle { display: flex; gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.25rem; }
+  .identity-btn { flex: 1; padding: 0.65rem 1rem; background: rgba(255,255,255,0.03); color: rgba(245,240,232,0.5); font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; text-align: center; font-family: 'DM Sans', sans-serif; }
+  .identity-btn.active { background: rgba(0,180,160,0.18); color: var(--teal); }
+  .identity-btn:first-child { border-right: 1px solid rgba(255,255,255,0.08); }
+  .named-fields { display: none; animation: fadeUp 0.3s ease both; }
+  .named-fields.show { display: block; }
+  .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+  .form-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem 1rem; color: var(--paper); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; transition: border-color 0.2s; }
+  .form-input:focus { outline: none; border-color: var(--teal); }
+  .form-input::placeholder { color: rgba(245,240,232,0.3); }
+  .identity-note { font-size: 0.78rem; color: rgba(245,240,232,0.4); padding: 0.5rem 0.75rem; background: rgba(0,180,160,0.06); border-radius: 8px; border: 1px solid rgba(0,180,160,0.12); margin-bottom: 1rem; }
+
+  .submit-btn { width: 100%; background: linear-gradient(135deg, var(--teal), #00c8b4); color: var(--ink); border: none; padding: 1rem; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(0,180,160,0.35); }
+  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: rgba(13,13,20,0.95); border: 1px solid rgba(0,180,160,0.4); border-radius: 16px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; transform: translateY(120px); transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 999; max-width: 340px; }
+  .toast.show { transform: translateY(0); }
+  .toast-icon { font-size: 2rem; }
+  .toast-title { font-weight: 700; margin-bottom: 0.15rem; }
+  .toast-msg { font-size: 0.85rem; color: rgba(245,240,232,0.6); }
+
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin: 1.5rem 0; }
+
+  .highlight-box { background: rgba(0,180,160,0.06); border: 1px solid rgba(0,180,160,0.15); border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1.25rem; font-size: 0.875rem; color: rgba(245,240,232,0.7); line-height: 1.6; }
+  .highlight-box strong { color: var(--teal); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+  .pulse { animation: pulseGlow 2s ease-in-out infinite; }
+  @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(0,180,160,0.3); } 50% { box-shadow: 0 0 0 12px rgba(0,180,160,0); } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  @media (max-width: 768px) {
+    nav { padding: 0 1rem; height: 56px; }
+    nav ul { display: none; }
+    .hamburger { display: flex; }
+    .hero { padding: 3rem 1.25rem 2.5rem; min-height: auto; }
+    .hero h1 { font-size: 2.6rem; }
+    .hero p { font-size: 1rem; }
+    .hero-ctas { flex-direction: column; align-items: stretch; }
+    .hero-ctas .btn { text-align: center; justify-content: center; }
+    .stats-row { grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-top: 2rem; }
+    .stat-card { padding: 1rem 0.5rem; }
+    .stat-card .num { font-size: 1.5rem; }
+    .section { padding: 2.5rem 1.25rem; }
+    .section-title { font-size: 1.8rem; }
+    .two-col { grid-template-columns: 1fr; gap: 1.25rem; }
+    .demo-box { padding: 1.5rem; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .d-card { padding: 1.25rem; }
+    .student-profile { flex-direction: column; align-items: flex-start; gap: 1rem; padding: 1.5rem; }
+    .xp-bar-wrap { width: 100%; min-width: unset; }
+    .points-chip { width: 100%; }
+    .badges-grid { grid-template-columns: repeat(2,1fr); gap: 0.75rem; }
+    .badge-card { padding: 0.9rem; }
+    .lb-header, .lb-row { grid-template-columns: 36px 1fr 60px; gap: 0.5rem; padding: 0.8rem 1rem; }
+    .lb-header span:last-child, .lb-row .lb-rate { display: none; }
+    .feedback-form-wrap { max-width: 100%; }
+    .rating-btn { padding: 0.6rem 0.35rem; font-size: 1.05rem; }
+    .toast { left: 1rem; right: 1rem; bottom: 1rem; max-width: none; }
+    .hero-badge { font-size: 0.72rem; text-align: center; }
+  }
+  @media (max-width: 400px) { .hero h1 { font-size: 2rem; } .stats-row { grid-template-columns: 1fr; } .section-title { font-size: 1.5rem; } }
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .section { padding: 3.5rem 1.75rem; }
+    .hero h1 { font-size: 3.5rem; }
+    nav ul li a { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+    .badges-grid { grid-template-columns: repeat(3,1fr); }
+    .dashboard-grid { grid-template-columns: 1.5fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">V<span>eco</span></div>
+  <ul>
+    <li><a onclick="showPage('home')" class="active" id="nav-home">Home</a></li>
+    <li><a onclick="showPage('dashboard')" id="nav-dashboard">Dashboard</a></li>
+    <li><a onclick="showPage('student')" id="nav-student">Student Hub</a></li>
+    <li><a onclick="showPage('feedback')" id="nav-feedback">Give Feedback</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a onclick="showPage('home');closeMenu()" id="mnav-home" class="active">🏠 Home</a>
+  <a onclick="showPage('dashboard');closeMenu()" id="mnav-dashboard">📊 Dashboard</a>
+  <a onclick="showPage('student');closeMenu()" id="mnav-student">🎮 Student Hub</a>
+  <a onclick="showPage('feedback');closeMenu()" id="mnav-feedback">✍️ Give Feedback</a>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-badge">🎓 Student Feedback on Teaching · Building a Better Feedback System</div>
+    <h1>Feedback that <em>actually</em><br>drives change</h1>
+    <p>Veco uses real-time NLP sentiment analysis and gamification to make student feedback meaningful — for students and educators alike.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary pulse" onclick="showPage('feedback')">✍️ Give Feedback</button>
+      <button class="btn btn-ghost" onclick="showPage('dashboard')">📊 View Teacher Dashboard</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="num">94%</div><div class="label">Sentiment accuracy</div></div>
+      <div class="stat-card"><div class="num">3.2×</div><div class="label">Boost in response rates</div></div>
+      <div class="stat-card"><div class="num">Real-time</div><div class="label">Analysis speed</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHER DASHBOARD -->
+<div class="page" id="page-dashboard">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label">📊 Teacher Dashboard</div>
+      <div class="section-title">Sentiment Trends & Insights</div>
+    </div>
+    <div class="dashboard-grid">
+      <div>
+        <div class="d-card" style="margin-bottom:1.5rem;">
+          <div class="d-card-title">Overall Sentiment Trend — Last 8 Weeks</div>
+          <div class="trend-area">
+            <svg class="chart-svg" viewBox="0 0 600 180" preserveAspectRatio="none" style="overflow:visible;">
+              <defs>
+                <linearGradient id="posGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient>
+                <linearGradient id="negGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f43f5e" stop-opacity="0.2"/><stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/></linearGradient>
+              </defs>
+              <line x1="0" y1="45" x2="600" y2="45" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="0" y1="90" x2="600" y2="90" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <line x1="0" y1="135" x2="600" y2="135" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <path d="M0,100 L85,80 L171,60 L257,55 L342,40 L428,35 L514,30 L600,25 L600,180 L0,180 Z" fill="url(#posGrad)"/>
+              <path d="M0,100 L85,80 L171,60 L257,55 L342,40 L428,35 L514,30 L600,25" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M0,50 L85,55 L171,65 L257,70 L342,75 L428,80 L514,85 L600,90 L600,180 L0,180 Z" fill="url(#negGrad)"/>
+              <path d="M0,50 L85,55 L171,65 L257,70 L342,75 L428,80 L514,85 L600,90" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="5,3" stroke-linecap="round"/>
+              <circle cx="0" cy="100" r="4" fill="#10b981"/><circle cx="85" cy="80" r="4" fill="#10b981"/>
+              <circle cx="171" cy="60" r="4" fill="#10b981"/><circle cx="257" cy="55" r="4" fill="#10b981"/>
+              <circle cx="342" cy="40" r="4" fill="#10b981"/><circle cx="428" cy="35" r="4" fill="#10b981"/>
+              <circle cx="514" cy="30" r="4" fill="#10b981"/><circle cx="600" cy="25" r="4" fill="#10b981"/>
+            </svg>
+          </div>
+          <div class="chart-labels"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span><span>Week 5</span><span>Week 6</span><span>Week 7</span><span>Week 8</span></div>
+          <div style="display:flex;gap:1rem;margin-top:1rem;">
+            <span class="mini-badge mini-pos">● Positive sentiment</span>
+            <span class="mini-badge mini-neg">● Negative sentiment</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+          <div class="d-card" style="text-align:center;">
+            <div class="d-card-title">Avg Positive</div>
+            <div id="dashAvgPos" style="font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--pos);font-weight:700;">68%</div>
+            <div style="font-size:0.75rem;color:rgba(245,240,232,0.4);margin-top:0.25rem;">↑ +12% vs last term</div>
+          </div>
+          <div class="d-card" style="text-align:center;">
+            <div class="d-card-title">Total Responses</div>
+            <div id="dashTotal" style="font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--teal);font-weight:700;">247</div>
+            <div style="font-size:0.75rem;color:rgba(245,240,232,0.4);margin-top:0.25rem;">↑ +89 vs last term</div>
+          </div>
+          <div class="d-card" style="text-align:center;">
+            <div class="d-card-title">Participation</div>
+            <div style="font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--amber);font-weight:700;">81%</div>
+            <div style="font-size:0.75rem;color:rgba(245,240,232,0.4);margin-top:0.25rem;">↑ +23% vs last term</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE FEED -->
+      <div class="d-card">
+        <div class="d-card-title"><span class="live-dot"></span>Live Tagged Feedback</div>
+        <div class="feedback-list" id="dashboardFeedbackList">
+          <div class="fb-item pos">"The explanation of regression analysis was crystal clear. Best lecture so far."<div class="fb-meta"><span class="mini-badge mini-pos" style="font-size:0.7rem;">Positive 89%</span><span>2 min ago</span></div></div>
+          <div class="fb-item neg">"Assignment rubric is too vague. I had no idea what was expected."<div class="fb-meta"><span class="mini-badge mini-neg" style="font-size:0.7rem;">Negative 74%</span><span>15 min ago</span></div></div>
+          <div class="fb-item pos">"Love the interactive quizzes. Really helps me stay focused during class."<div class="fb-meta"><span class="mini-badge mini-pos" style="font-size:0.7rem;">Positive 91%</span><span>32 min ago</span></div></div>
+          <div class="fb-item neu">"The pace is okay. Some weeks are too fast and others too slow."<div class="fb-meta"><span class="mini-badge mini-neu" style="font-size:0.7rem;">Neutral 55%</span><span>1 hr ago</span></div></div>
+          <div class="fb-item neg">"Office hours timing doesn't work for most students. Need more flexible options."<div class="fb-meta"><span class="mini-badge mini-neg" style="font-size:0.7rem;">Negative 68%</span><span>2 hr ago</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT HUB -->
+<div class="page" id="page-student">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label">🎮 Student Hub</div>
+      <div class="section-title">Your Feedback, Rewarded</div>
+    </div>
+    <div class="student-profile">
+      <div class="avatar">👩‍🎓</div>
+      <div class="profile-info">
+        <h3>Aisha Ramos</h3>
+        <p>Computer Science · Year 2 · 🔥 5-week streak</p>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-label"><span>Level 7 — Insightful Reviewer</span><span id="xpAmountLabel">680 / 1000 XP</span></div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      </div>
+      <div class="points-chip">
+        <div class="pts" id="studentPoints">1,240</div>
+        <div class="pts-label">Total Points</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:1rem;">🏅 Your Badges</div>
+    <div class="badges-grid">
+      <div class="badge-card"><div class="badge-icon">🌟</div><div class="badge-name">First Feedback</div><div class="badge-desc">Submitted your first comment</div></div>
+      <div class="badge-card"><div class="badge-icon">🔥</div><div class="badge-name">On Fire</div><div class="badge-desc">5-week streak</div></div>
+      <div class="badge-card"><div class="badge-icon">💎</div><div class="badge-name">Deep Thinker</div><div class="badge-desc">100+ word comment</div></div>
+      <div class="badge-card"><div class="badge-icon">🏆</div><div class="badge-name">Top Contributor</div><div class="badge-desc">Top 10% in department</div></div>
+      <div class="badge-card locked" id="badge-all-courses"><div class="badge-icon">🌍</div><div class="badge-name">All Courses</div><div class="badge-desc">Give feedback in 5 courses</div></div>
+      <div class="badge-card locked" id="badge-precision"><div class="badge-icon">🎯</div><div class="badge-name">Precision Pro</div><div class="badge-desc">10 actionable feedbacks</div></div>
+    </div>
+
+    <div class="section-label" style="margin:2rem 0 1rem;">🏆 Course Participation Leaderboard</div>
+    <div class="leaderboard">
+      <div class="lb-header"><span style="text-align:center;">Rank</span><span>Course</span><span style="text-align:right;">Responses</span><span style="text-align:right;">Rate</span></div>
+      <div class="lb-row"><div class="lb-rank gold">🥇</div><div><div class="lb-course">Data Structures & Algorithms</div><div class="lb-prof">Prof. Chen Wei</div></div><div class="lb-responses" id="lb-dsa">142</div><div class="lb-rate"><span class="rate-pill rate-high">96%</span></div></div>
+      <div class="lb-row"><div class="lb-rank silver">🥈</div><div><div class="lb-course">Machine Learning Fundamentals</div><div class="lb-prof">Dr. Sarah Okafor</div></div><div class="lb-responses" id="lb-ml">128</div><div class="lb-rate"><span class="rate-pill rate-high">88%</span></div></div>
+      <div class="lb-row"><div class="lb-rank bronze">🥉</div><div><div class="lb-course">Software Engineering</div><div class="lb-prof">Prof. Marcus Bell</div></div><div class="lb-responses" id="lb-se">109</div><div class="lb-rate"><span class="rate-pill rate-high">81%</span></div></div>
+      <div class="lb-row"><div class="lb-rank" style="color:rgba(245,240,232,0.4)">4</div><div><div class="lb-course">Database Systems</div><div class="lb-prof">Dr. Priya Nair</div></div><div class="lb-responses" id="lb-db">87</div><div class="lb-rate"><span class="rate-pill rate-mid">62%</span></div></div>
+      <div class="lb-row"><div class="lb-rank" style="color:rgba(245,240,232,0.4)">5</div><div><div class="lb-course">Computer Networks</div><div class="lb-prof">Prof. James Liu</div></div><div class="lb-responses" id="lb-cn">54</div><div class="lb-rate"><span class="rate-pill rate-low">38%</span></div></div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:1.5rem;">
+      <strong>📈 Why Gamification Works:</strong> Based on Self-Determination Theory, students are more likely to engage when they feel <strong>competent</strong> (badges acknowledge effort), <strong>connected</strong> (leaderboards create community), and <strong>autonomous</strong> (flexible feedback options). Simulated data shows a <strong>3.2× increase</strong> in response rates with gamified systems vs. traditional surveys.
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK FORM -->
+<div class="page" id="page-feedback">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-label">✍️ Give Feedback</div>
+      <div class="section-title">Share Your Experience</div>
+    </div>
+
+    <div style="max-width:1100px;margin:0 auto;">
+
+      <!-- Pipeline bar -->
+      <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;padding:0.85rem 1.25rem;background:rgba(0,180,160,0.05);border:1px solid rgba(0,180,160,0.12);border-radius:12px;margin-bottom:2rem;font-size:0.78rem;color:rgba(245,240,232,0.4);">
+        <span style="font-weight:600;">Pipeline:</span>
+        <span class="pipe-step" id="pipe1" style="padding:0.2rem 0.7rem;border-radius:999px;background:rgba(0,180,160,0.15);border:1px solid rgba(0,180,160,0.4);color:var(--teal);font-weight:600;">✍️ Write</span>
+        <span style="opacity:.4;">→</span>
+        <span class="pipe-step" id="pipe2" style="padding:0.2rem 0.7rem;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-weight:600;">🔬 NLP</span>
+        <span style="opacity:.4;">→</span>
+        <span class="pipe-step" id="pipe3" style="padding:0.2rem 0.7rem;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-weight:600;">🏷️ Tag</span>
+        <span style="opacity:.4;">→</span>
+        <span class="pipe-step" id="pipe4" style="padding:0.2rem 0.7rem;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-weight:600;">📊 Dashboard</span>
+      </div>
+
+      <div class="two-col" style="align-items:start;gap:2rem;">
+
+        <!-- LEFT: Form -->
+        <div class="demo-box">
+          <div class="demo-label">Your Feedback</div>
+
+          <div class="form-group">
+            <label class="form-label">Course</label>
+            <select class="form-select" id="feedbackCourse">
+              <option value="dsa">Data Structures &amp; Algorithms — Prof. Chen Wei</option>
+              <option value="ml">Machine Learning Fundamentals — Dr. Sarah Okafor</option>
+              <option value="se">Software Engineering — Prof. Marcus Bell</option>
+              <option value="db">Database Systems — Dr. Priya Nair</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Overall Rating</label>
+            <div class="rating-group">
+              <div class="rating-btn" onclick="selectRating(this)">😞</div>
+              <div class="rating-btn" onclick="selectRating(this)">😐</div>
+              <div class="rating-btn" onclick="selectRating(this)">🙂</div>
+              <div class="rating-btn active" onclick="selectRating(this)">😊</div>
+              <div class="rating-btn" onclick="selectRating(this)">🤩</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Your Identity</label>
+            <div class="identity-toggle">
+              <button class="identity-btn active" id="anonBtn" onclick="setIdentity('anon')">🔒 Anonymous</button>
+              <button class="identity-btn" id="namedBtn" onclick="setIdentity('named')">🪪 Share My Name</button>
+            </div>
+            <div class="named-fields" id="namedFields">
+              <div class="name-row">
+                <input class="form-input" id="studentName" type="text" placeholder="Full Name" />
+                <input class="form-input" id="enrollmentNo" type="text" placeholder="Enrollment No." />
+              </div>
+              <div class="identity-note">✅ Your name and enrollment number will be visible to the professor. You earn <strong>+50 XP</strong> for identified feedback.</div>
+            </div>
+            <div class="identity-note" id="anonNote">🔒 Your feedback is fully anonymous — no name or ID will be shared with your professor.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">What went well?</label>
+            <textarea class="demo-textarea" id="feedbackPos" style="min-height:90px;"
+              placeholder="e.g. The professor explained concepts very clearly and was patient..."
+              oninput="liveAnalyze()"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">What could be improved?</label>
+            <textarea class="demo-textarea" id="feedbackNeg" style="min-height:90px;"
+              placeholder="e.g. The pace could be a bit slower during complex topics..."
+              oninput="liveAnalyze()"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Any other comments?</label>
+            <textarea class="demo-textarea" id="feedbackExtra" style="min-height:80px;"
+              placeholder="Optional — any other thoughts?"
+              oninput="liveAnalyze()"></textarea>
+          </div>
+
+          <button class="submit-btn" id="submitBtn" onclick="submitFeedback()">
+            🚀 Submit & Send to Dashboard (+50 XP)
+          </button>
+
+          <div class="highlight-box" id="submitNote" style="margin-top:1rem;">
+            <strong>🔒 Anonymous & AI-Analyzed:</strong> Your feedback is anonymous. The NLP panel on the right shows exactly what your professor will see — no names attached.
+          </div>
+        </div>
+
+        <!-- RIGHT: Full NLP Analysis -->
+        <div>
+          <div class="demo-box">
+            <div class="demo-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+              <span>🔬 Live NLP Analysis</span>
+              <span id="fbLiveDot" style="font-size:0.72rem;color:rgba(245,240,232,0.3);display:flex;align-items:center;gap:0.35rem;">
+                <span style="width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;"></span>Waiting for input
+              </span>
+            </div>
+
+            <!-- Empty state -->
+            <div id="fbEmpty" style="text-align:center;padding:3.5rem 1rem;color:rgba(245,240,232,0.2);">
+              <div style="font-size:3.5rem;margin-bottom:1rem;filter:grayscale(1);">🔬</div>
+              <div style="font-size:0.875rem;line-height:1.7;">Start typing your feedback on the left<br>to see the full NLP analysis here in real time.</div>
+            </div>
+
+            <!-- Full result panel (shown once text exists) -->
+            <div id="fbResultFull" style="display:none;">
+
+              <!-- Verdict -->
+              <div id="fbVerdict" class="sentiment-verdict" style="margin-bottom:1.5rem;"></div>
+
+              <!-- Sentiment bars -->
+              <div class="sentiment-bars" style="margin-bottom:1.75rem;">
+                <div class="sentiment-row">
+                  <span class="s-label pos">Positive</span>
+                  <div class="bar-track"><div class="bar-fill pos" id="fbBarPos" style="width:0%"></div></div>
+                  <span class="s-pct" id="fbPctPos" style="color:var(--pos)">0%</span>
+                </div>
+                <div class="sentiment-row">
+                  <span class="s-label neg">Negative</span>
+                  <div class="bar-track"><div class="bar-fill neg" id="fbBarNeg" style="width:0%"></div></div>
+                  <span class="s-pct" id="fbPctNeg" style="color:var(--neg)">0%</span>
+                </div>
+                <div class="sentiment-row">
+                  <span class="s-label neu">Neutral</span>
+                  <div class="bar-track"><div class="bar-fill neu" id="fbBarNeu" style="width:0%"></div></div>
+                  <span class="s-pct" id="fbPctNeu" style="color:var(--neu)">0%</span>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:0 0 1.25rem;"></div>
+
+              <div class="demo-label" style="margin-bottom:0.6rem;">Detected Keywords</div>
+              <div class="keyword-tags" id="fbKeywords" style="margin-bottom:1.5rem;"></div>
+
+              <div class="highlight-box" id="fbInsight" style="margin-top:0;"></div>
+
+            </div>
+          </div>
+
+          <!-- Dashboard preview card -->
+          <div id="fbDashPreview" style="margin-top:1rem;display:none;animation:fadeUp 0.35s ease both;">
+            <div class="demo-box" style="background:rgba(0,180,160,0.04);border-color:rgba(0,180,160,0.2);padding:1.25rem 1.5rem;">
+              <div class="demo-label" style="color:var(--teal);margin-bottom:0.75rem;">👁 What your teacher will see on their Dashboard</div>
+              <div id="fbDashCard" class="fb-item"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon">🎉</div>
+  <div>
+    <div class="toast-title">+50 XP Earned! 🌟</div>
+    <div class="toast-msg" id="toastMsg">Your feedback has been analyzed & sent to the dashboard!</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SHARED NLP ENGINE
+// ============================================================
+const posWords = {
+  clear:0.8,clearly:0.8,great:0.9,excellent:1.0,good:0.7,helpful:0.8,amazing:1.0,
+  love:0.9,best:0.9,fantastic:1.0,easy:0.5,engaging:0.8,interesting:0.7,well:0.6,
+  patient:0.7,thorough:0.7,organized:0.7,available:0.5,responsive:0.7,fun:0.8,
+  inspiring:0.9,effective:0.8,brilliant:0.9,wonderful:0.9,perfect:0.9,awesome:0.9
+};
+const negWords = {
+  fast:0.5,slow:0.5,difficult:0.7,hard:0.5,confusing:0.8,unclear:0.8,boring:0.9,
+  bad:0.8,terrible:1.0,awful:1.0,poor:0.7,vague:0.7,inconsistent:0.6,unfair:0.8,
+  frustrating:0.9,overwhelming:0.7,rushed:0.6,too:0.3,struggle:0.6,lost:0.6,
+  late:0.4,lacks:0.6,missing:0.5,complicated:0.6,pacing:0.4
+};
+
+function runNLP(text) {
+  const words = text.toLowerCase().replace(/[^a-z\s']/g,'').split(/\s+/);
+  let posScore = 0, negScore = 0;
+  const foundPos=[], foundNeg=[], foundNeu=[];
+  words.forEach(w => {
+    if (posWords[w]) { posScore += posWords[w]; foundPos.push(w); }
+    else if (negWords[w]) { negScore += negWords[w]; foundNeg.push(w); }
+    else if (w.length > 4 && !['that','this','with','from','they','have','been','were','will','your','about'].includes(w)) foundNeu.push(w);
+  });
+  const total = posScore + negScore + 0.01;
+  let pos = Math.round((posScore/total)*100);
+  let neg = Math.round((negScore/total)*100);
+  let neu = 100 - pos - neg;
+  if (neu < 0) { pos = Math.max(0, pos+neu); neu = 0; }
+  if (posScore===0 && negScore===0) { pos=5; neg=5; neu=90; }
+  let sentiment = pos>=60 ? 'pos' : neg>=60 ? 'neg' : 'neu';
+  return { pos, neg, neu, sentiment, foundPos, foundNeg, foundNeu };
+}
+
+// State for dashboard counters
+let totalResponses = 247;
+let posScoreSum = 68, posScoreCount = 1;
+
+// ============================================================
+// PAGE NAVIGATION
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a, .mobile-menu a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  const m = document.getElementById('mnav-'+name);
+  if (m) m.classList.add('active');
+}
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+  document.getElementById('hamburger').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('mobileMenu').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+// ============================================================
+// FEEDBACK FORM — live NLP in right panel
+// ============================================================
+let liveTimer = null;
+
+function liveAnalyze() {
+  clearTimeout(liveTimer);
+  const combined = [
+    document.getElementById('feedbackPos').value,
+    document.getElementById('feedbackNeg').value,
+    document.getElementById('feedbackExtra').value
+  ].join(' ').trim();
+
+  setPipe(1);
+
+  if (!combined || combined.length < 2) {
+    document.getElementById('fbEmpty').style.display = 'block';
+    document.getElementById('fbResultFull').style.display = 'none';
+    document.getElementById('fbDashPreview').style.display = 'none';
+    const dot = document.getElementById('fbLiveDot');
+    dot.style.color = 'rgba(245,240,232,0.3)';
+    dot.lastChild.textContent = 'Waiting for input';
+    setPipe(1);
+    return;
+  }
+
+  const dot = document.getElementById('fbLiveDot');
+  dot.style.color = 'var(--amber)';
+  dot.lastChild.textContent = 'Analyzing…';
+
+  liveTimer = setTimeout(() => {
+    setPipe(2);
+    const r = runNLP(combined);
+    setPipe(3);
+
+    document.getElementById('fbEmpty').style.display = 'none';
+    document.getElementById('fbResultFull').style.display = 'block';
+
+    setTimeout(() => {
+      document.getElementById('fbBarPos').style.width = r.pos+'%';
+      document.getElementById('fbBarNeg').style.width = r.neg+'%';
+      document.getElementById('fbBarNeu').style.width = r.neu+'%';
+      document.getElementById('fbPctPos').textContent = r.pos+'%';
+      document.getElementById('fbPctNeg').textContent = r.neg+'%';
+      document.getElementById('fbPctNeu').textContent = r.neu+'%';
+    }, 40);
+
+    const vEl = document.getElementById('fbVerdict');
+    const verdicts = {
+      pos:['rgba(16,185,129,0.12)','var(--pos)','1px solid rgba(16,185,129,0.25)','😊 Overall: Positive Feedback'],
+      neg:['rgba(244,63,94,0.12)','var(--neg)','1px solid rgba(244,63,94,0.25)','😟 Overall: Needs Attention'],
+      neu:['rgba(99,102,241,0.12)','var(--neu)','1px solid rgba(99,102,241,0.25)','😐 Overall: Mixed / Neutral']
+    };
+    const [bg,col,brd,lbl] = verdicts[r.sentiment];
+    vEl.style.cssText = `background:${bg};color:${col};border:${brd};`;
+    vEl.textContent = lbl;
+
+    const kEl = document.getElementById('fbKeywords');
+    kEl.innerHTML = '';
+    const shown = new Set();
+    r.foundPos.slice(0,4).forEach(w=>{if(!shown.has(w)){shown.add(w);kEl.innerHTML+=`<span class="keyword-tag pos">✓ ${w}</span>`;}});
+    r.foundNeg.slice(0,4).forEach(w=>{if(!shown.has(w)){shown.add(w);kEl.innerHTML+=`<span class="keyword-tag neg">⚠ ${w}</span>`;}});
+    r.foundNeu.slice(0,3).forEach(w=>{if(!shown.has(w)){shown.add(w);kEl.innerHTML+=`<span class="keyword-tag neu">${w}</span>`;}});
+    if (shown.size===0) kEl.innerHTML='<span class="keyword-tag neu">general comment</span>';
+
+    document.getElementById('fbInsight').innerHTML =
+      `<strong>💡 Auto-Insight for Teacher:</strong> This comment scores <strong>Positive: ${r.pos}%, Negative: ${r.neg}%</strong>. `+
+      (r.pos>r.neg ? 'The student appears satisfied — keep up the current approach.' :
+       r.neg>r.pos ? 'Actionable concern detected — consider addressing this in the next class.' :
+       'Mixed sentiment detected — follow up with the student group for more context.');
+
+    const sentLabel = r.sentiment==='pos' ? 'Positive' : r.sentiment==='neg' ? 'Negative' : 'Neutral';
+    const sentPct   = r.sentiment==='pos' ? r.pos : r.sentiment==='neg' ? r.neg : r.neu;
+    const badgeHtml = `<span class="mini-badge mini-${r.sentiment}" style="font-size:0.7rem;">${sentLabel} ${sentPct}%</span>`;
+    const preview = combined.length>90 ? combined.substring(0,90)+'…' : combined;
+    const courseText = document.getElementById('feedbackCourse').options[document.getElementById('feedbackCourse').selectedIndex].text.split('—')[0].trim();
+    document.getElementById('fbDashCard').className = `fb-item ${r.sentiment}`;
+    document.getElementById('fbDashCard').innerHTML = `"${escapeHtml(preview)}"<div class="fb-meta">${badgeHtml}<span>Preview · ${escapeHtml(courseText)}</span></div>`;
+    document.getElementById('fbDashPreview').style.display = 'block';
+
+    dot.style.color = r.sentiment==='pos' ? 'var(--pos)' : r.sentiment==='neg' ? 'var(--neg)' : 'var(--neu)';
+    dot.lastChild.textContent = 'Live';
+
+    setPipe(1);
+  }, 350);
+}
+
+function setPipe(active) {
+  const colors = {
+    1: ['rgba(0,180,160,0.15)','rgba(0,180,160,0.4)','var(--teal)'],
+    2: ['rgba(245,158,11,0.12)','rgba(245,158,11,0.35)','var(--amber)'],
+    3: ['rgba(99,102,241,0.12)','rgba(99,102,241,0.35)','var(--neu)'],
+    4: ['rgba(16,185,129,0.12)','rgba(16,185,129,0.35)','var(--pos)']
+  };
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById('pipe'+i);
+    if (!el) continue;
+    if (i === active) {
+      const [bg,brd,col] = colors[i];
+      el.style.cssText = `padding:0.2rem 0.7rem;border-radius:999px;background:${bg};border:1px solid ${brd};color:${col};font-weight:600;transition:all 0.3s;`;
+    } else {
+      el.style.cssText = 'padding:0.2rem 0.7rem;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-weight:600;transition:all 0.3s;';
+    }
+  }
+}
+
+// ============================================================
+// IDENTITY MODE
+// ============================================================
+let identityMode = 'anon';
+
+function setIdentity(mode) {
+  identityMode = mode;
+  document.getElementById('anonBtn').classList.toggle('active', mode === 'anon');
+  document.getElementById('namedBtn').classList.toggle('active', mode === 'named');
+  const namedFields = document.getElementById('namedFields');
+  const anonNote = document.getElementById('anonNote');
+  if (mode === 'named') {
+    namedFields.classList.add('show');
+    anonNote.style.display = 'none';
+    document.getElementById('submitNote').innerHTML = '<strong>🪪 Identified Feedback:</strong> Your name and enrollment number will be shared with your professor alongside your feedback.';
+    document.getElementById('submitBtn').textContent = '🚀 Submit with Name (+50 XP)';
+  } else {
+    namedFields.classList.remove('show');
+    anonNote.style.display = 'block';
+    document.getElementById('submitNote').innerHTML = '<strong>🔒 Anonymous & AI-Analyzed:</strong> Your feedback is anonymous. The NLP panel on the right shows exactly what your professor will see — no names attached.';
+    document.getElementById('submitBtn').textContent = '🚀 Submit & Send to Dashboard (+50 XP)';
+  }
+}
+
+
+// ============================================================
+// SUBMIT → DASHBOARD PIPELINE
+// ============================================================
+function submitFeedback() {
+  const posText   = document.getElementById('feedbackPos').value.trim();
+  const negText   = document.getElementById('feedbackNeg').value.trim();
+  const extraText = document.getElementById('feedbackExtra').value.trim();
+  const combined  = [posText, negText, extraText].filter(Boolean).join(' ');
+  const courseEl  = document.getElementById('feedbackCourse');
+  const courseVal = courseEl.value;
+  const courseName = courseEl.options[courseEl.selectedIndex].text.split('—')[0].trim();
+
+  if (!combined) {
+    const btn = document.getElementById('submitBtn');
+    btn.style.boxShadow = '0 0 0 2px var(--neg)';
+    setTimeout(()=>{ btn.style.boxShadow=''; }, 1600);
+    return;
+  }
+
+  // Validate named fields
+  if (identityMode === 'named') {
+    const name = document.getElementById('studentName').value.trim();
+    const enr  = document.getElementById('enrollmentNo').value.trim();
+    if (!name || !enr) {
+      document.getElementById('studentName').style.borderColor = 'var(--neg)';
+      document.getElementById('enrollmentNo').style.borderColor = 'var(--neg)';
+      setTimeout(()=>{
+        document.getElementById('studentName').style.borderColor = '';
+        document.getElementById('enrollmentNo').style.borderColor = '';
+      }, 1800);
+      return;
+    }
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⚙️ Processing…';
+
+  [1,2,3,4].forEach((s,i) => {
+    setTimeout(() => {
+      setPipe(s);
+      if (s===4) {
+        const nlp = runNLP(combined);
+        const studentName = identityMode === 'named' ? document.getElementById('studentName').value.trim() : null;
+        const enrollmentNo = identityMode === 'named' ? document.getElementById('enrollmentNo').value.trim() : null;
+        pushToDashboard({
+          text: combined.length>95 ? combined.substring(0,95)+'…' : combined,
+          sentiment: nlp.sentiment,
+          pos: nlp.pos,
+          neg: nlp.neg,
+          course: courseName,
+          studentName,
+          enrollmentNo
+        }, courseVal);
+        updateStudentProfile();
+
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = identityMode === 'named' ? '🚀 Submit with Name (+50 XP)' : '🚀 Submit & Send to Dashboard (+50 XP)';
+          document.getElementById('feedbackPos').value = '';
+          document.getElementById('feedbackNeg').value = '';
+          document.getElementById('feedbackExtra').value = '';
+          document.getElementById('fbEmpty').style.display = 'block';
+          document.getElementById('fbResultFull').style.display = 'none';
+          document.getElementById('fbDashPreview').style.display = 'none';
+          const dot = document.getElementById('fbLiveDot');
+          dot.style.color = 'rgba(245,240,232,0.3)';
+          dot.lastChild.textContent = 'Waiting for input';
+          setPipe(1);
+
+          const sentLabel = nlp.sentiment==='pos' ? 'positif ✅' : nlp.sentiment==='neg' ? 'négatif ⚠️' : 'neutre ➖';
+          document.getElementById('toastMsg').textContent =
+            `Sentiment : ${sentLabel} (${nlp.pos}% positif). Transmis au dashboard du professeur !`;
+          document.getElementById('toast').classList.add('show');
+          setTimeout(() => document.getElementById('toast').classList.remove('show'), 4500);
+        }, 400);
+      }
+    }, i * 480);
+  });
+}
+
+function pushToDashboard(entry, courseVal) {
+  const badgeHtml = entry.sentiment==='pos'
+    ? `<span class="mini-badge mini-pos" style="font-size:0.7rem;">Positive ${entry.pos}%</span>`
+    : entry.sentiment==='neg'
+      ? `<span class="mini-badge mini-neg" style="font-size:0.7rem;">Negative ${entry.neg}%</span>`
+      : `<span class="mini-badge mini-neu" style="font-size:0.7rem;">Neutral</span>`;
+
+  const identityHtml = entry.studentName
+    ? `<span style="color:var(--teal);font-size:0.72rem;font-weight:600;">🪪 ${entry.studentName} (${entry.enrollmentNo})</span>`
+    : `<span style="color:rgba(245,240,232,0.3);font-size:0.72rem;">🔒 Anonymous</span>`;
+
+  const list = document.getElementById('dashboardFeedbackList');
+  const item = document.createElement('div');
+  item.className = `fb-item ${entry.sentiment} new-entry`;
+  item.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">${identityHtml}${badgeHtml}</div>"${entry.text}"<div class="fb-meta"><span>just now · ${entry.course}</span></div>`;
+  list.insertBefore(item, list.firstChild);
+  while (list.children.length > 8) list.removeChild(list.lastChild);
+  setTimeout(() => item.classList.remove('new-entry'), 1800);
+
+  totalResponses++;
+  animateCounter('dashTotal', totalResponses);
+
+  posScoreSum += entry.pos;
+  posScoreCount++;
+  const newAvg = Math.round(posScoreSum / posScoreCount);
+  animateCounter('dashAvgPos', newAvg+'%');
+
+  const lbEl = document.getElementById('lb-'+courseVal);
+  if (lbEl) {
+    const newVal = parseInt(lbEl.textContent) + 1;
+    lbEl.textContent = newVal;
+    lbEl.classList.remove('flash-update');
+    void lbEl.offsetWidth;
+    lbEl.classList.add('flash-update');
+    setTimeout(()=>lbEl.classList.remove('flash-update'), 800);
+  }
+}
+
+function animateCounter(id, newVal) {
+  const el = document.getElementById(id);
+  el.textContent = newVal;
+  el.classList.remove('flash-update');
+  void el.offsetWidth;
+  el.classList.add('flash-update');
+  setTimeout(()=>el.classList.remove('flash-update'), 800);
+}
+
+function updateStudentProfile() {
+  const ptsEl = document.getElementById('studentPoints');
+  const cur = parseInt(ptsEl.textContent.replace(/,/g,''));
+  ptsEl.textContent = (cur+50).toLocaleString();
+  ptsEl.style.color = '#34d399';
+  setTimeout(()=>{ ptsEl.style.color=''; }, 1000);
+
+  const xpFill = document.getElementById('xpFill');
+  const xpLabel = document.getElementById('xpAmountLabel');
+  const curPct = parseFloat(xpFill.style.width)||68;
+  xpFill.style.width = Math.min(curPct+5, 100)+'%';
+  const xpMatch = xpLabel.textContent.match(/(\d+)/);
+  if (xpMatch) xpLabel.textContent = `${parseInt(xpMatch[1])+50} / 1000 XP`;
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function escapeHtml(t) {
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function selectRating(el) {
+  document.querySelectorAll('.rating-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const xp = document.getElementById('xpFill');
+    if (xp) xp.style.width = '68%';
+  }, 500);
+});
+</script>
+</body>
+</html>
